@@ -1,0 +1,32 @@
+package {{ core_package }};
+
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
+import io.qameta.allure.Allure;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+
+public class Hooks {
+
+    @Before
+    public void setUp() {
+        DriverFactory.initDriver(ConfigReader.get("browser", "chrome"));
+        String baseUrl = ConfigReader.get("base.url", "");
+        if (!baseUrl.isEmpty()) {
+            DriverFactory.getDriver().get(baseUrl);
+        }
+    }
+
+    @After
+    public void tearDown(Scenario scenario) {
+        WebDriver driver = DriverFactory.getDriver();
+        if (scenario.isFailed() && driver instanceof TakesScreenshot) {
+            byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+            Allure.addAttachment(scenario.getName() + "-failure", "image/png",
+                    new java.io.ByteArrayInputStream(screenshot), "png");
+        }
+        DriverFactory.quitDriver();
+    }
+}
